@@ -1,41 +1,24 @@
-# Análise Fatorial de Indicadores Municipais 🇧🇷
+# Análise Fatorial: Indicadores Municipais Brasileiros 🇧🇷
 
-Este projeto aplica técnicas de estatística multivariada (**AFE** e **PCA**) para identificar os fatores latentes que estruturam o desenvolvimento socioeconômico das cidades brasileiras. O objetivo é reduzir a dimensionalidade de indicadores demográficos e econômicos em dimensões interpretáveis.
+Este projeto utiliza técnicas de estatística multivariada para identificar dimensões latentes no desenvolvimento dos municípios brasileiros, reduzindo 11 indicadores socioeconômicos em dois fatores principais.
 
-## 🛠️ Diagnóstico e Metodologia
-
-Antes da extração dos fatores, os dados foram validados para garantir a adequação da análise:
-
-* **KMO:** 0,84 (Adequação Meritória).
-* **Teste de Bartlett:** $p < 0,001$ (Correlações significativas confirmadas).
-
-## 📈 Extração de Componentes
-
-Utilizando o **Critério de Kaiser**, identificamos que **dois componentes** explicam aproximadamente **78,8%** da variância total dos dados. O ponto de inflexão no "Gráfico de Cotovelo" confirma esta decisão:
-
-![Scree Plot](image_c688de.png)
-
-## 📊 Principais Resultados
-
-A análise revelou duas dimensões distintas que regem os municípios:
-
-1. **Porte e Infraestrutura (Dim 1):** Concentra variáveis como PIB Total, Frota de Carros e População.
-2. **Desenvolvimento Humano (Dim 2):** Concentra as variáveis de IDHM e PIB per capita.
-
-### Mapa de Variáveis (PCA)
-O gráfico abaixo ilustra como as variáveis se agrupam nestas duas dimensões. Note que o porte econômico e o desenvolvimento social são eixos independentes no conjunto de dados.
-
-![Círculo de Correlações](image_c69363.png)
-
-### Contribuição das Variáveis
-As variáveis de infraestrutura urbana são as que mais contribuem para a formação do primeiro componente:
-
-![Ranking de Contribuição](image_c6937e.png)
-
-## 🏗️ Estrutura do Modelo
-Abaixo, a representação visual de como as variáveis observadas se conectam aos fatores latentes identificados:
+## 🏗️ Modelo Teórico
+A análise baseia-se na premissa de que as variáveis observadas (PIB, População, IDHM, etc.) são reflexos de fatores latentes subjacentes. O modelo busca capturar a variância comum entre essas variáveis:
 
 ![Modelo de Análise Fatorial](esquema.png)
 
+## 📊 Principais Resultados
+
+Após a validação pelos testes KMO (**0,84**) e Bartlett (**p < 0,001**), a análise de componentes principais (PCA) revelou duas dimensões independentes que explicam **78,8%** da variância total:
+
+1. **Porte e Infraestrutura (Dim 1):** Agrupa variáveis de volume como População, PIB Total e frota de veículos.
+2. **Desenvolvimento Humano (Dim 2):** Agrupa os indicadores de IDHM e PIB per capita.
+
+O mapa abaixo ilustra como essas variáveis se comportam: as variáveis de porte econômico estão no eixo horizontal, enquanto as de bem-estar social definem o eixo vertical.
+
+![Mapa de Variáveis - PCA](Rplot.png)
+
 ---
+**Conclusão:** O estudo demonstra que o porte econômico de uma cidade (tamanho) é uma dimensão independente da sua eficiência em gerar desenvolvimento humano (IDHM), permitindo classificações mais precisas para políticas públicas.
+
 *Análise desenvolvida por Gabriel Cardoso.*
