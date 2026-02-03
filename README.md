@@ -16,7 +16,7 @@ Após a validação pelos testes KMO (**0,84**) e Bartlett (**p < 0,001**), a an
 
 O mapa abaixo ilustra como essas variáveis se comportam: as variáveis de porte econômico estão no eixo horizontal, enquanto as de bem-estar social definem o eixo vertical.
 
-![Mapa de Variáveis - PCA](Rplot.png)
+![Mapa de Variáveis - PCA](AF/Rplot.png)
 
 ---
 **Conclusão:** O estudo demonstra que o porte econômico de uma cidade (tamanho) é uma dimensão independente da sua eficiência em gerar desenvolvimento humano (IDHM), permitindo classificações mais precisas para políticas públicas.
