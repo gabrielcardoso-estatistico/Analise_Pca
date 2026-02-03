@@ -5,7 +5,7 @@ Este projeto utiliza técnicas de estatística multivariada para identificar dim
 ## 🏗️ Modelo Teórico
 A análise baseia-se na premissa de que as variáveis observadas (PIB, População, IDHM, etc.) são reflexos de fatores latentes subjacentes. O modelo busca capturar a variância comum entre essas variáveis:
 
-![Modelo de Análise Fatorial](esquema.png)
+![Modelo de Análise Fatorial](AF/esquema.png)
 
 ## 📊 Principais Resultados
 
