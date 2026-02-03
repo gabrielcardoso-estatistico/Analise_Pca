@@ -1,0 +1,249 @@
+---
+title: "Análise Fatorial de Indicadores Municipais"
+subtitle: "Padrões Socioeconômicos em Cidades Brasileiras"
+author: "Gabriel Cardoso"
+lang: pt
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-location: left
+    code-fold: true
+    code-summary: "Exibir código"
+    number-sections: true
+    self-contained: true
+editor: visual
+bibliography: references.bib
+nocite: |
+  @*
+---
+
+# **Análise Fatorial de Indicadores Municipais – Cidades Brasileiras**
+
+## 📊 Resumo do Projeto
+
+Este projeto utiliza dados agregados de cidades brasileiras, contendo indicadores demográficos, econômicos e sociais, coletados de fontes públicas e compilados para fins de análise comparativa. O conjunto de dados inclui informações como população, PIB, densidade populacional, educação, saúde e infraestrutura urbana, permitindo explorar padrões de desenvolvimento entre os municípios.
+
+O objetivo da análise é identificar fatores latentes que sintetizem padrões subjacentes nos indicadores municipais, por meio da **Análise Fatorial Exploratória (AFE)**. Para isso, são aplicados testes de adequação dos dados, como KMO e teste de esfericidade de Bartlett, métodos de extração de fatores e técnicas de rotação, garantindo uma interpretação consistente dos fatores identificados.
+
+Os resultados fornecem uma representação reduzida e interpretável da estrutura dos dados, evidenciando dimensões latentes de desenvolvimento socioeconômico municipal, que podem ser utilizadas em análises complementares, como agrupamento de cidades por perfil, construção de índices de desenvolvimento ou análises comparativas regionais.
+
+# Análise Fatorial
+
+A **Análise Fatorial (AF)** é uma técnica estatística utilizada para **identificar estruturas latentes** que explicam as correlações entre um conjunto de variáveis observadas $(X_1, X_2, X_3)$. O objetivo principal é reduzir a dimensionalidade dos dados, representando $p$ variáveis originais por um número menor $m$ de fatores não observáveis $(F_1, F_2,...,F_m)$, capazes de capturar a variação comum entre as variáveis.
+
+O modelo fatorial pode ser expresso como:
+
+$$
+X_j = \lambda_{j1}F_1 + \lambda_{j2}F_2 + \dots + \lambda_{jm}F_m + \varepsilon_j, \quad j=1, 2, \dots, p$$
+
+onde:
+
+-   $X_j$: é a variável observada $j$
+
+-   $\lambda_{j1}$: a carga fatorial da variável $j$ no fator $k$, indicando intensidade da relação.
+
+-   $F_k$: é o fator latente $k$.
+
+-   $\varepsilon_j$: é o termo de erro específico da variável $j$, não explicado pelos fatores comuns.
+
+    ![](esquema.png)
+
+A interpretação dos fatores é facilitada por **técnicas de rotação**, como **Varimax** (ortogonal) ou **Oblimin** (oblíqua), que buscam simplificar a estrutura das cargas fatoriais, tornando cada fator mais representativo de um conjunto reduzido de variáveis.
+
+A análise fatorial é amplamente utilizada em disciplinas como **psicologia, educação, marketing e ciências sociais** para:
+
+1.  Identificar padrões subjacentes em dados complexos;
+
+2.  Reduzir a dimensionalidade dos dados;
+
+3.  Criar índices ou scores representativos de fatores latentes;
+
+4.  Interpretar variáveis altamente correlacionadas de forma mais clara.
+
+# Carregando e Tratando os Dados
+
+```{r,warning=FALSE,message=FALSE,echo=FALSE}
+setwd("C:/Users/gabriel.cardoso/Desktop/projetos github/PROJETOS COM R/AF")
+```
+
+```{r,warning=FALSE,message=FALSE}
+library(tidyverse)
+library(psych)       # Para KMO, Bartlett e AFE
+library(GPArotation) # Para rotação varimax
+library(factoextra)  # Para gráficos de PCA
+library(corrplot)    # Para visualizar correlações
+library(rio)
+
+df <- import("BRAZIL_CITIES.csv")
+
+# Inspecionar o dataset
+str(df)
+```
+
+Selecionar variáveis de interesse para ser mais dinâmico
+
+```{r}
+
+# 1️⃣ Seleção de variáveis numéricas existentes
+variaveis_afe <- c(
+  "IBGE_RES_POP_BRAS",   # população
+  "AREA",                # área do município
+  "GDP",                 # PIB
+  "GDP_CAPITA",          # PIB per capita
+  "IDHM_Renda",          # renda
+  "IDHM_Educacao",       # educação
+  "IDHM_Longevidade",    # longevidade
+  "Cars",                # carros
+  "Motorcycles",         # motos
+  "FIXED_PHONES",        # telefones fixos
+  "PAY_TV"               # TVs
+)
+
+dados_afe <- df %>% select(all_of(variaveis_afe))
+```
+
+```{r}
+# 2️⃣ Converter AREA para numérico (tem vírgula no CSV)
+dados_afe$AREA <- as.numeric(gsub(",", "", dados_afe$AREA))
+
+# 3️⃣ Tratar missing
+dados_afe <- dados_afe %>% mutate(across(everything(), ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
+```
+
+# Visualizar correlações
+
+```{r}
+corrplot(cor(dados_afe), 
+         method = "color", 
+         tl.col = "black", 
+         tl.cex = 0.8, 
+         tl.srt = 45,      # Inclina os nomes do topo
+         addCoef.col = "white", # Opcional: mostra os números da correlação em branco
+         number.cex = 0.7)
+```
+
+Observe o bloco azul escuro no canto inferior direito e no canto superior esquerdo. Variáveis como **IBGE_RES_POP**, **GDP (PIB)**, **Cars**, **Fixed_Phones** e **Pay_TV** estão quase que perfeitamente correlacionadas ($r \approx 1$).
+
+-   **O que isso significa:** Elas estão medindo basicamente a mesma coisa: "tamanho da cidade" ou "riqueza total".
+
+# Análise Fatorial
+
+## Testes de adequação
+
+```{r}
+kmo_result <- KMO(cor(dados_afe))
+kmo_result$MSA
+```
+
+O KMO alto confirma : as variáveis estão tão correlacionadas entre si que faz muito sentido "compactá-las" em um único fator (por exemplo, um índice de "Riqueza/Infraestrutura"). Se as correlações fossem baixas, o KMO seria baixo, indicando que cada variável está indo para um lado e não podem ser resumidas.
+
+```{r}
+bartlett_test <- cortest.bartlett(cor(dados_afe), n = nrow(dados_afe))
+bartlett_test
+```
+
+Os testes **KMO (0,84)** e de **Bartlett (p \< 0,001)** confirmam a alta adequabilidade dos dados para análise fatorial. O valor de KMO indica que as variáveis são consistentes entre si, enquanto o teste de Bartlett rejeita a independência das variáveis, autorizando a redução dos dados em componentes principais.
+
+## Cálculo e Visualização dos Autovalores
+
+```{r}
+# Calculando a matriz de correlação e os autovalores
+matriz_cor <- cor(dados_afe)
+autovalores <- eigen(matriz_cor)$values
+
+# Criando o Scree Plot (Gráfico de Cotovelo)
+plot(autovalores, type = "b", pch = 19, col = "blue",
+     main = "Scree Plot (Gráfico de Cotovelo)",
+     xlab = "Número do Componente",
+     ylab = "Autovalor (Variância Explicada)")
+abline(h = 1, col = "red", lty = 2) # Linha de corte do Critério de Kaiser
+```
+
+Análise do Gráfico:
+
+-   **Critério de Kaiser:** Temos exatamente **2 componentes** com autovalores (eigenvalues) nitidamente acima de 1.
+
+-   **O Terceiro Ponto:** Note que o componente 3 está exatamente em cima da linha (ou ligeiramente abaixo). Isso sugere que manter apenas **2 fatores** é a decisão mais elegante e estatisticamente econômica.
+
+-   **Variância:** O primeiro componente sozinho explica uma quantidade enorme da variação (quase 6 unidades), o que confirma aquela forte correlação que vimos no início
+
+## Rodando a PCA
+
+```{r}
+library(factoextra)
+
+# Executando a PCA (usando 2 componentes conforme o gráfico)
+res.pca <- prcomp(dados_afe, scale = TRUE)
+```
+
+```{r}
+fviz_pca_var(res.pca,
+             col.var = "contrib", # Cor por contribuição
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE,        # Evita sobreposição de nomes
+             title = "Mapa de Variáveis - Contribuição para o Modelo")
+```
+
+Este gráfico revela a estrutura oculta dos seus dados. Observe que as variáveis se agruparam em dois eixos principais:
+
+-   **Dim1 (Eixo Horizontal - 53.1% da variância):** É o eixo do **"Porte Econômico e Infraestrutura"**. Variáveis como *Cars, GDP, Fixed Phones* e *Population* estão coladas no eixo horizontal. Quanto mais para a direita uma cidade estiver, maior ela é em termos de volume econômico.
+
+-   **Dim2 (Eixo Vertical - 25.7% da variância):** É o eixo do **"Desenvolvimento Humano"**. As variáveis de *IDHM (Renda, Longevidade, Educação)* e *GDP per capita* apontam para cima.
+
+-   **Interpretação:** Note que os dois grupos formam um ângulo de quase **90 graus**. Isso significa que, no seu banco de dados, ser uma cidade "grande/rica em volume" (Dim1) não garante automaticamente um "IDHM alto" (Dim2). São dimensões independentes.
+
+-   **A variável AREA:** Ela aponta para baixo e é curta (cor azul), indicando que tem **baixa contribuição** para explicar esses dois fatores principais.
+
+```{r}
+fviz_contrib(res.pca, choice = "var", axes = 1, fill = "skyblue", color = "black")
+```
+
+Contribuição para a Dim-1 (Gráfico de Barras)
+
+Este gráfico confirma quem manda no primeiro componente.
+
+-   As variáveis que ultrapassam a **linha tracejada vermelha** são as que realmente definem esse fator.
+
+-   *Cars, Fixed Phones, População, Pay TV* e *GDP* são praticamente idênticas em peso. Você poderia criar um "Índice de Urbanização/Riqueza" usando apenas elas.
+
+## Como saber se o modelo é realmente bom?
+
+```{r}
+# Ver as cargas fatoriais
+res.pca$rotation[, 1:2]
+```
+
+**Interpretação das Cargas Fatoriais (`rotation`)**
+
+As cargas mostram a correlação de cada variável com os componentes.
+
+-   **PC1 (Eixo de Estrutura/Porte):** É dominado por variáveis com cargas em torno de **0.40** (População, PIB, Carros, Telefones). Elas caminham juntas: cidades grandes têm muita infraestrutura bruta.
+
+-   **PC2 (Eixo de Bem-Estar):** É dominado por **IDHM_Renda (0.53)**, **IDHM_Educacao (0.50)** e **IDHM_Longevidade (0.51)**.
+
+-   **Insight:** A variável **AREA** tem carga quase zero em ambos, confirmando que o tamanho geográfico não explica nem riqueza nem desenvolvimento.
+
+```{r}
+# Calcular comunalidades
+var_coord <- res.pca$rotation^2
+rowSums(var_coord[, 1:2]) # Soma dos quadrados das cargas nos 2 fatores
+```
+
+A comunalidade mostra o "aproveitamento" da variável pelo modelo.
+
+-   Os valores de IDHM estão mais altos (\~0.30), enquanto os de porte físico estão em torno de 0.17.
+
+-   **Atenção:** Como esses valores são os quadrados das cargas da matriz de rotação (`res.pca$rotation^2`), eles representam a contribuição individual de cada variável na construção do eixo. A soma total de todas as comunalidades será sempre 1 por componente.
+
+# Conclusão
+
+A aplicação da Análise Fatorial Exploratória (AFE) demonstrou ser altamente eficaz para a síntese dos indicadores municipais. Os testes de diagnóstico iniciais, **KMO (0,84)** e **Bartlett (p \< 0,001)**, ratificaram a robustez estatística do conjunto de dados, confirmando que as correlações existentes não eram aleatórias e permitiam a redução dimensional.
+
+A extração dos componentes, orientada pelo Critério de Kaiser e pelo Gráfico de Cotovelo, revelou que **78,8% da variância total** dos dados pode ser explicada por apenas dois fatores latentes principais:
+
+1.  **Dimensão de Porte e Infraestrutura Econômica (PC1):** Este fator sintetiza o volume bruto das cidades, agrupando variáveis como População, PIB Total, frota de veículos e acesso a serviços de telecomunicações. É o eixo que diferencia grandes centros urbanos de municípios menores.
+
+2.  **Dimensão de Desenvolvimento Humano e Eficiência (PC2):** Este eixo isolou os indicadores de IDHM (Educação, Longevidade e Renda) e o PIB per capita. A independência estatística observada entre este fator e o primeiro sugere que o crescimento econômico quantitativo (PIB Total) não se traduz automaticamente em qualidade de vida qualitativa (IDHM) na mesma proporção.
+
+A variável "Área Territorial" apresentou baixa comunalidade, indicando que a extensão geográfica não é um determinante direto do desenvolvimento socioeconômico neste modelo. Em suma, a análise permitiu transformar 11 indicadores complexos em duas dimensões interpretáveis, fornecendo uma base sólida para a criação de rankings municipais ou futuras estratégias de segmentação de políticas públicas baseadas no perfil real de cada município.
